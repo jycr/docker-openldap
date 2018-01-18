@@ -71,6 +71,11 @@ EOF
         rm /tmp/config.ldif
     fi
 
+    for file in `find /etc/ldap/schema/ -name '*.schema'`; do
+        if [ ! -e "/etc/ldap/schema/$(basename "$file" .schema).ldif" ]; then
+            /schema2ldif.sh "$file" "$(basename "$file" .schema | sed -r 's,^[0-9]+-,,')"
+        fi
+    done
     if [[ -n "$SLAPD_ADDITIONAL_SCHEMAS" ]]; then
         IFS=","; declare -a schemas=($SLAPD_ADDITIONAL_SCHEMAS); unset IFS
 
@@ -103,13 +108,21 @@ else
 fi
 
 if [[ "$first_run" == "true" ]]; then
-    if [[ -d "/etc/ldap/prepopulate" ]]; then 
-        for file in `ls /etc/ldap/prepopulate/*.ldif`; do
-            slapadd -F /etc/ldap/slapd.d -l "$file"
-        done
+    if [[ -d "/etc/ldap/prepopulate" ]]; then
+        pushd "/etc/ldap/prepopulate" > /dev/null
+            for file in `find . -name '*.schema'`; do
+                /schema2ldif.sh "$file" "$(basename "$file" .schema | sed -r 's,^[0-9]+-,,')"
+            done
+            for file in `find /etc/ldap/prepopulate/ -name '*.ldif' | sort`; do
+                echo "slapadd: $file"
+                slapadd -F /etc/ldap/slapd.d -l "$file"
+            done
+        popd > /dev/null
     fi
 fi
 
 chown -R openldap:openldap /etc/ldap/slapd.d/ /var/lib/ldap/ /var/run/slapd/
+
+echo "LDAP data ready"
 
 exec "$@"

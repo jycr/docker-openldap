@@ -16,6 +16,10 @@ COPY modules/ /etc/ldap.dist/modules
 
 COPY entrypoint.sh /entrypoint.sh
 
+COPY schema2ldif.sh /schema2ldif.sh
+
+RUN chmod +x /schema2ldif.sh
+
 EXPOSE 389
 
 VOLUME ["/etc/ldap", "/var/lib/ldap"]
