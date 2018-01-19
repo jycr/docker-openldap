@@ -140,3 +140,37 @@ The first holds the "static" configuration while the second holds the actual
 database. Please make sure that these two directories are saved (in a data-only
 container or alike) in order to make sure that everything is restored after a
 restart of the container.
+
+`docker-compose.yml` example
+----------------------------
+
+```yaml
+version: '3.3'
+
+services:
+  ldap:
+    image: jycr/openldap
+    ports:
+      - 389:389
+    environment:
+      SLAPD_PASSWORD: admin
+      SLAPD_CONFIG_PASSWORD: admin
+      SLAPD_DOMAIN: ldap.acme.org
+      SLAPD_ADDITIONAL_SCHEMAS: acme
+      SLAPD_ORGANIZATION: ACME
+      SLAPD_ADDITIONAL_MODULES: memberof
+    configs:
+      - source: acme.schema
+        target: /etc/ldap.dist/schema/forge.schema
+      - source: 01-init-ldap-structure.ldif
+        target: /etc/ldap.dist/prepopulate/01-init-ldap-structure.ldif
+      - source: 02-init-ldap-data.ldif
+        target: /etc/ldap.dist/prepopulate/02-init-ldap-data.ldif
+configs:
+  00-forge.schema:
+    file: ./resources/schema/forge.schema
+  01-init-ldap-structure.ldif:
+    file: ./resources/prepopulate/01-init-ldap-structure.ldif
+  02-init-ldap-data.ldif:
+    file: ./resources/prepopulate/02-init-ldap-data.ldif
+```
