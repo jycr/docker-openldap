@@ -33,13 +33,15 @@ if [[ ! -d /etc/ldap/slapd.d || "$SLAPD_FORCE_RECONFIGURE" == "true" ]]; then
 
     cp -r /etc/ldap.dist/* /etc/ldap
 
+	# Note: The hdb backend will soon be deprecated in favor of the new mdb backend.
+	# See: https://www.openldap.org/doc/admin24/backends.html
     cat <<-EOF | debconf-set-selections
         slapd slapd/no_configuration boolean false
         slapd slapd/password1 password $SLAPD_PASSWORD
         slapd slapd/password2 password $SLAPD_PASSWORD
         slapd shared/organization string $SLAPD_ORGANIZATION
         slapd slapd/domain string $SLAPD_DOMAIN
-        slapd slapd/backend select HDB
+        slapd slapd/backend select MDB
         slapd slapd/allow_ldap_v2 boolean false
         slapd slapd/purge_database boolean false
         slapd slapd/move_old_database boolean true
