@@ -15,7 +15,7 @@ if [[ -f "/var/lib/ldap/DB_CONFIG" ]]; then
 fi
 
 if [[ ! -d /etc/ldap/slapd.d || "$SLAPD_FORCE_RECONFIGURE" == "true" ]]; then
-
+    echo "Reconfiguration..."
     if [[ -z "$SLAPD_PASSWORD" ]]; then
         echo -n >&2 "Error: Container not configured and SLAPD_PASSWORD not set. "
         echo >&2 "Did you forget to add -e SLAPD_PASSWORD=... ?"
@@ -111,13 +111,21 @@ fi
 
 if [[ "$first_run" == "true" ]]; then
     if [[ -d "/etc/ldap/prepopulate" ]]; then
+        echo "LDAP setup data"
         pushd "/etc/ldap/prepopulate" > /dev/null
             for file in `find . -name '*.schema'`; do
+                echo "Prepare schema: $file"
                 /schema2ldif.sh "$file" "$(basename "$file" .schema | sed -r 's,^[0-9]+-,,')"
             done
             for file in `find /etc/ldap/prepopulate/ -name '*.ldif' | sort`; do
                 echo "slapadd: $file"
                 slapadd -F /etc/ldap/slapd.d -l "$file"
+            done
+            chown -R openldap:openldap /etc/ldap/slapd.d/ /var/lib/ldap/ /var/run/slapd/
+            for file in `find /etc/ldap/prepopulate/ -name '*.sh' -type f | sort`; do
+                echo "Run (as $(whoami)): $(ls -ldh $file)"
+                chmod -v +x "$file"
+                "$file"
             done
         popd > /dev/null
     fi
